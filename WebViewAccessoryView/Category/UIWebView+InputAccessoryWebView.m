@@ -1,17 +1,28 @@
-#import <Foundation/Foundation.h>
+//
+//  UIWebView+InputAccessoryWebView.m
+//  WebViewKeyboard
+//
+//  Created by CF on 2018/5/29.
+//  Copyright © 2018年 klone. All rights reserved.
+//
+
+#import "UIWebView+InputAccessoryWebView.h"
 #import <objc/runtime.h>
-#import "FA_InputAccessoryWebView.h"
-
-@interface FA_InputAccessoryWebView ()
-    @property (nonatomic, assign) UIView * _accessoryView;
-@end
-
-
-
-@implementation FA_InputAccessoryWebView
 
 static const char * const hackishFixClassName = "UIWebBrowserViewMinusAccessoryView";
 static Class hackishFixClass = Nil;
+
+@implementation UIWebView (InputAccessoryWebView)
+@dynamic k_AccessoryView;
+
+- (void)setK_AccessoryView:(UIView *)k_AccessoryView {
+    objc_setAssociatedObject(self, @selector(k_AccessoryView), k_AccessoryView, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    [self changeAccessoryView];
+}
+
+- (UIView *)k_AccessoryView {
+    return objc_getAssociatedObject(self, @selector(k_AccessoryView));
+}
 
 - (UIView *)findBrowserView {
     UIScrollView *scrollView = self.scrollView;
@@ -35,7 +46,7 @@ static Class hackishFixClass = Nil;
     }
     
     // Always replace the imp of the method.
-    UIView * toolbar = self._accessoryView;
+    UIView * toolbar = self.k_AccessoryView;
     id block = ^{
         return toolbar;
     };
@@ -43,12 +54,11 @@ static Class hackishFixClass = Nil;
     class_replaceMethod(hackishFixClass, @selector(inputAccessoryView), blockImp, "@@:");
 }
 
-- (void) changeAccessoryView:(UIView *)accessoryView {
+- (void)changeAccessoryView {
     UIView *browserView = [self findBrowserView];
     if (browserView == nil) {
         return;
     }
-    self._accessoryView = accessoryView;
     
     [self ensureHackishSubclassExistsOfBrowserViewClass:[browserView class]];
     
